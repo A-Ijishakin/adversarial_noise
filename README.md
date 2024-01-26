@@ -33,7 +33,7 @@ To use the repo follow these instructions:
 
 5. Next run
     ```
-    python3 adversary.py --image_path <path to input image> --save_path <path to where the adversarial image should be saved> --target_class <the adversarial class>
+    python3 produce_adversarial_example.py --image_path <path to input image> --save_path <path to where the adversarial image should be saved> --target_class <the adversarial class>
     ```
 
 The repo will output the adversarial image at the specified location. 

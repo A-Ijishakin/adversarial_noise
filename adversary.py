@@ -4,7 +4,6 @@ from torchvision.models import resnet50, ResNet50_Weights
 import torch.nn as nn
 from torch.nn import functional as F 
 import matplotlib.pyplot as plt
-import argparse 
 
 class Adversary:
     """ 
@@ -151,16 +150,3 @@ class Adversary:
         
         #save the image to the save path 
         plt.savefig(save_path)
-        
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-
-    #parse the input arguments 
-    parser.add_argument('--image_path', type=str)
-    parser.add_argument('--target_class', type=str)
-    parser.add_argument('--save_path', type=str)
-    args = parser.parse_args() 
-    
-    #test the visualise image and noise function we now have an example adversarial image and noise which can be viewed in the output folder
-    Adversary().produce_adversarial_image(image_path=args.image_path, save_path = args.save_path, target_class = args.target_class)  
