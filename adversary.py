@@ -19,7 +19,7 @@ class Adversary:
         
         """
         
-        #set the device to cuda if available, otherwise cpu
+        #run on the cpu to avoid package errors 
         self.device = 'cpu'
         
         #instantite the model weights
