@@ -1,5 +1,6 @@
-Repository for creating adversary examples. 
+Repository for creating adversarial examples. 
 
+This repository requires python >= 3.7.2. Please select an adversarial class from the classes.txt file. Note that the script will expect the class name to have the exact formatting from the classes.txt file. 
 
 To use the repo follow these instructions:
 
@@ -9,17 +10,22 @@ To use the repo follow these instructions:
 
     ``` 
 
-2. Then make a virtual environment with:
+2. Then cd into it
+   ```
+   cd adversarial_noise  
+   ```
+
+3. Then make a virtual environment with:
     ```
-    python3.7 -m venv myenv -m venv <name of environemt> 
+    python3 -m venv <name of environemt> 
     ```
 
-3. Then activate the virtual envrionment with:
+4. Then activate the virtual envrionment with:
     ```
     source <name of environment>/bin/activate
     ``` 
 
-4. Install the neccessary packages: 
+5. Install the neccessary packages: 
     ```
     pip install -r requirements.txt 
     ``` 

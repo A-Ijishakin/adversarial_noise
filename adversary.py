@@ -20,7 +20,7 @@ class Adversary:
         """
         
         #set the device to cuda if available, otherwise cpu
-        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+        self.device = 'cpu'
         
         #instantite the model weights
         self.weights = ResNet50_Weights.DEFAULT
