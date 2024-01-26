@@ -140,6 +140,10 @@ class Adversary:
         #add the noise to the image 
         adversarial_img = (img + noise).permute(1, 2, 0).cpu().detach().numpy()
         
+        #normalise the image 
+        adversarial_img = (adversarial_img - adversarial_img.min()) / (adversarial_img.max() - adversarial_img.min()) 
+        
+        
         #plot the adversarial image 
         plt.imshow(adversarial_img)
         plt.axis('off')
@@ -148,9 +152,6 @@ class Adversary:
         #save the image to the save path 
         plt.savefig(save_path)
         
-        
-#some example images have been downloaded from kaggle at: https://www.kaggle.com/datasets/ifigotin/imagenetmini-1000 this is one: renamed to giant_panda.jpg
-test_img = 'inputs/giant_panda.jpg' 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -162,4 +163,4 @@ if __name__ == "__main__":
     args = parser.parse_args() 
     
     #test the visualise image and noise function we now have an example adversarial image and noise which can be viewed in the output folder
-    Adversary().produce_adversarial_image(image_path=args.image_path, save_path = args.save_path,  target_class = args.target_class)  
+    Adversary().produce_adversarial_image(image_path=args.image_path, save_path = args.save_path, target_class = args.target_class)  
