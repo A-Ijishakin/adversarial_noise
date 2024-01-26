@@ -5,7 +5,6 @@ import torch.nn as nn
 from torch.nn import functional as F 
 import matplotlib.pyplot as plt
 
-
 class Adversary:
     """ 
     Adversary: 
@@ -38,7 +37,7 @@ class Adversary:
         self.noise = torch.zeros(3, 224, 224).to(self.device)
         
         
-    def generate_adversarial_noise(self, img : torch.tensor, actual_index: int, target_index: int,
+    def generate_adversarial_noise(self, img : torch.tensor, actual_class_index: int, target_class_index: int,
                                    lr=0.05, steps=500):
         
         """ 
@@ -64,10 +63,10 @@ class Adversary:
         optimizer = torch.optim.Adam([noise], lr=lr) 
         
         #get the one hot encoded vector for the actual class 
-        actual_class = F.one_hot(torch.tensor(actual_index), num_classes=1000).to(torch.float32).to(self.device)
+        actual_class_index = F.one_hot(torch.tensor(actual_class_index), num_classes=1000).to(torch.float32).to(self.device)
         
         #get the one hot encoded vector the target class 
-        adversarial_class = F.one_hot(torch.tensor(target_index), num_classes=1000).to(torch.float32).to(self.device)
+        adversarial_class = F.one_hot(torch.tensor(target_class_index), num_classes=1000).to(torch.float32).to(self.device)
         
         #iterate over the number of steps
         for iteration in range(steps): 
@@ -79,7 +78,7 @@ class Adversary:
             class_pred = self.model(adversarial_img.unsqueeze(0)).squeeze(0).softmax(0) 
             
             #compute the negative of the loss for the actual class by computing the negative we ensure the total loss will minimise the likelihood of this class 
-            original_loss = - self.loss(class_pred, actual_class) 
+            original_loss = - self.loss(class_pred, actual_class_index) 
             
             #compute the loss for the adversarial class this will maximise the likelihood of the adversarial class
             adversarial_loss = self.loss(class_pred, adversarial_class)
@@ -94,20 +93,20 @@ class Adversary:
             #take a step in the direction of the gradient 
             optimizer.step() 
             
+            predicted_class = self.weights.meta["categories"][class_pred.argmax().item()]
+            
             #check if the adversarial class has been found
-            if class_pred.argmax().item() == target_index:
+            if class_pred.argmax().item() == target_class_index:
                 #if it has print the number of steps taken and break out of the loop
                 print(f"Adversarial Noise Found in {iteration} steps")
                 break
             
-        return noise.detach()  
+        return noise.detach(), predicted_class
     
-    
-    def visualise_img_and_noise(self, img_path, actual_index, target_index):
+    def produce_adversarial_image(self, image_path, target_class, save_path):
         """
-        
-        visualise_img_and_noise: 
-            Visualises the original image, the adversarial noise and the adversarial image. 
+        produce_adversarial_image: 
+            produces an adversarial image and saves it to the outputs folder given an image and a target class. 
             
         Args:
             img_path (str): path to the image file
@@ -120,31 +119,38 @@ class Adversary:
         """
         
         #load in the image and pre-process it 
-        img = self.pre_process(Image.open(img_path)).to(self.device) 
+        img = self.pre_process(Image.open(image_path)).to(self.device) 
+        
+        #get the logits associated with the image of the by making a classification with the model 
+        logits = self.model(img.unsqueeze(0)).squeeze(0).softmax(0)
+    
+        #find the index of the 'actual' class    
+        actual_class_index = logits.argmax().item()
+        
+        #get the classification index of the target class  
+        target_class_index = self.weights.meta["categories"].index(target_class) 
         
         #generate the adversarial noise 
-        noise = self.generate_adversarial_noise(img=img, actual_index=actual_index, target_index=target_index) 
-
+        noise, predicted_class = self.generate_adversarial_noise(img=img, actual_class_index=actual_class_index, target_class_index=target_class_index) 
         
-        #plot the original image, the noise and the adversarial image        
-        fig, ax = plt.subplots(1, 3) 
+        #take noise off the gpu and visualise it 
+        noise = noise
         
-        ax[0].imshow(img.permute(1, 2, 0).cpu().detach().numpy())
-        ax[0].set_title('Original Image')
-        ax[0].axis('off')
-        ax[1].imshow(noise.permute(1, 2, 0).cpu().detach().numpy())
-        ax[1].set_title('Adversarial Noise')
-        ax[1].axis('off')
-        ax[2].imshow((img + noise).permute(1, 2, 0).cpu().detach().numpy())
-        ax[2].set_title('Adversarial Image')
-        ax[2].axis('off') 
-    
-        plt.savefig('outputs/adversarial_example.png')
+        #add the noise to the image 
+        adversarial_img = (img + noise).permute(1, 2, 0).cpu().detach().numpy()
         
-
+        #plot the adversarial image 
+        plt.imshow(adversarial_img)
+        plt.axis('off')
+        plt.title(f'Predicted Class: {predicted_class}') 
+        
+        #save the image to the save path 
+        plt.savefig(save_path)
+        
+        
 #some example images have been downloaded from kaggle at: https://www.kaggle.com/datasets/ifigotin/imagenetmini-1000 this is one: renamed to giant_panda.jpg
 test_img = 'inputs/giant_panda.jpg' 
 
 if __name__ == "__main__":
     #test the visualise image and noise function we now have an example adversarial image and noise which can be viewed in the output folder
-    Adversary().visualise_img_and_noise(img_path=test_img, actual_index=388, target_index=1)  
+    Adversary().produce_adversarial_image(image_path=test_img, target_class='goldfish', save_path='outputs/adversarial_image.png')  
