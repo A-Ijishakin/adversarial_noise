@@ -1,9 +1,9 @@
 import torch 
 from PIL import Image
 from torchvision.models import resnet50, ResNet50_Weights  
-from torch.utils.tensorboard import SummaryWriter 
 import torch.nn as nn
 from torch.nn import functional as F 
+import matplotlib.pyplot as plt
 
 
 class Adversary:
@@ -34,51 +34,11 @@ class Adversary:
         #initialise the loss function
         self.loss = nn.CrossEntropyLoss() 
         
-        #initialise the logger the runs folder is in the gitignore to save space 
-        self.logger = SummaryWriter('runs') 
-        
         #initialise the noise tensor
         self.noise = torch.zeros(3, 224, 224).to(self.device)
         
         
-          
-    def classify(self, img_path: str):
-        """ 
-        classify: 
-            Classifies an image using a pretrained ResNet50 model. 
-            Prints the predicted class and the likelihood of the prediction. 
-        
-        Args:
-            img_path (str): path to image file
-            
-        Returns:
-            None    
-        
-        """
-        #load in the image 
-        img = Image.open(img_path)
-        
-        #preprocess the image 
-        img = self.pre_process(img).to(self.device)
-        
-        #make a classification
-        classification = self.model(img.unsqueeze(0)).squeeze(0).softmax(0)
-
-        #compute the predicted class 
-        predicted_class = classification.argmax().item()
-
-        #get the likelihood of the prediction
-        likelihood = classification[predicted_class].item()
-        
-        #get the class name 
-        class_name = self.weights.meta["categories"][predicted_class]
-
-        #print the results 
-        print(f"Predicted class: {class_name} (With Confidence of {100 * likelihood})")  
-        
-        
-        
-    def generate_adversarial_noise(self, img_path : str, actual_index: int, target_index: int,
+    def generate_adversarial_noise(self, img : torch.tensor, actual_index: int, target_index: int,
                                    lr=0.05, steps=500):
         
         """ 
@@ -109,9 +69,6 @@ class Adversary:
         #get the one hot encoded vector the target class 
         adversarial_class = F.one_hot(torch.tensor(target_index), num_classes=1000).to(torch.float32).to(self.device)
         
-        #preprocess the image 
-        img = self.pre_process(Image.open(img_path)).to(self.device) 
-        
         #iterate over the number of steps
         for iteration in range(steps): 
             
@@ -137,21 +94,57 @@ class Adversary:
             #take a step in the direction of the gradient 
             optimizer.step() 
             
-            #log the loss and the predicted class 
-            self.logger.add_scalar('Loss', loss.item(), iteration) 
-            self.logger.add_text('Predicted Class', self.weights.meta["categories"][class_pred.argmax().item()], iteration) 
-            
             #check if the adversarial class has been found
             if class_pred.argmax().item() == target_index:
                 #if it has print the number of steps taken and break out of the loop
                 print(f"Adversarial Noise Found in {iteration} steps")
                 break
             
-        return noise.detach() 
+        return noise.detach()  
+    
+    
+    def visualise_img_and_noise(self, img_path, actual_index, target_index):
+        """
+        
+        visualise_img_and_noise: 
+            Visualises the original image, the adversarial noise and the adversarial image. 
+            
+        Args:
+            img_path (str): path to the image file
+            actual_index (int): the index of the actual class
+            target_index (int): the index of the target class
+            
+        Returns:
+            None 
+        
+        """
+        
+        #load in the image and pre-process it 
+        img = self.pre_process(Image.open(img_path)).to(self.device) 
+        
+        #generate the adversarial noise 
+        noise = self.generate_adversarial_noise(img=img, actual_index=actual_index, target_index=target_index) 
+
+        
+        #plot the original image, the noise and the adversarial image        
+        fig, ax = plt.subplots(1, 3) 
+        
+        ax[0].imshow(img.permute(1, 2, 0).cpu().detach().numpy())
+        ax[0].set_title('Original Image')
+        ax[0].axis('off')
+        ax[1].imshow(noise.permute(1, 2, 0).cpu().detach().numpy())
+        ax[1].set_title('Adversarial Noise')
+        ax[1].axis('off')
+        ax[2].imshow((img + noise).permute(1, 2, 0).cpu().detach().numpy())
+        ax[2].set_title('Adversarial Image')
+        ax[2].axis('off') 
+    
+        plt.savefig('outputs/adversarial_example.png')
+        
 
 #some example images have been downloaded from kaggle at: https://www.kaggle.com/datasets/ifigotin/imagenetmini-1000 this is one: renamed to giant_panda.jpg
-test_img = 'images/giant_panda.jpg' 
+test_img = 'inputs/giant_panda.jpg' 
 
 if __name__ == "__main__":
-    #test the generate_adversarial_noise function here the target class is a goldfish 
-    Adversary().generate_adversarial_noise(test_img, 388, 1) 
+    #test the visualise image and noise function we now have an example adversarial image and noise which can be viewed in the output folder
+    Adversary().visualise_img_and_noise(img_path=test_img, actual_index=388, target_index=1)  
