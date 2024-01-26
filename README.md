@@ -1,6 +1,6 @@
 Repository for creating adversarial examples. 
 
-This repository requires python >= 3.7.2. Please select an adversarial class from the classes.txt file. Note that the script will expect the class name to have the exact formatting from the classes.txt file. 
+This repository requires python >= 3.10.12. Please select an adversarial class from the classes.txt file. Note that the script will expect the class name to have the exact formatting from the classes.txt file. 
 
 To use the repo follow these instructions:
 
@@ -37,6 +37,3 @@ To use the repo follow these instructions:
     ```
 
 The repo will output the adversarial image at the specified location. 
-
-
-
