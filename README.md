@@ -1,8 +1,18 @@
-Repository for creating adversary examples. Currently a single input file exists which is a giant panda. It is then adversarilly altered to be classified as a goldfish. 
+Repository for creating adversary examples. 
 
-The repo requires python >= 3.7 and the pacakges in the requirements file
+It requires python >= 3.7 and the pacakges in the requirements file
 
-To use run:
-```
-python3 adversary.py
-```
+
+To use the repo follow these instructions:
+
+1. First clone it with:
+    ```
+    https://github.com/A-Ijishakin/adversarial_noise.git
+
+    ```
+2. Next run
+    ```
+    python3 adversary.py --image_path <path to input image> --save_path <path to where the adversarial image should be saved> --target_class <the adversarial class>
+    ```
+
+The repo will output the adversarial image at the specified location 
